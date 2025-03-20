@@ -1,0 +1,19 @@
+{
+    "name": "Java 21 with MySQL",
+    "dockerComposeFile": "docker-compose.yaml",
+    "service": "apim",
+    "workspaceFolder": "/workspace",
+    "forwardPorts": [33060],
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "redhat.java",
+          "vscjava.vscode-java-pack",
+          "ms-mysql.mysql"
+        ]
+      }
+    },
+    "postCreateCommand": "sudo apt update && sudo apt install -y maven",
+    "remoteUser": "vscode"
+  }
+  
