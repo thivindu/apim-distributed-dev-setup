@@ -1,8 +1,8 @@
 # apim-distributed-dev-setup
 
-This repository provides an easy-to-use setup for a distributed API Management (APIM) development environment. Begin by copying the necessary packs into the `components` directory. **Note:** The directory names must strictly follow this naming convention: `wso2am-acp`, `wso2am-tm`, and `wso2am-universal-gw`. 
+This repository provides a straightforward setup for a distributed API Management (APIM) development environment. Start by copying the required packs into the `components` directory. **Note:** The directory names must strictly adhere to the following naming convention: `wso2am-acp`, `wso2am-tm`, and `wso2am-universal-gw`. 
 
-When you run the startup script, it initializes a MySQL Docker container and executes the scripts located in `conf/mysql/scripts`. Following this, the APIM components are launched with the configurations outlined below.
+When you execute the startup script, it initializes a MySQL Docker container and runs the scripts located in `conf/mysql/scripts`. Subsequently, the APIM components are launched with the configurations specified below:
 
 - **APIM-ACP**: Zero offset
 - **APIM-TM**: Offset of 1
@@ -21,7 +21,7 @@ When you run the startup script, it initializes a MySQL Docker container and exe
     cd apim-distributed-dev-setup
     ```
 2. Extract the packs into the `components` directory:
-    Ensure that the packs are placed in the `components` directory with the following exact folder names:
+    Ensure the packs are placed in the `components` directory with the following exact folder names:
     - `wso2am-acp`
     - `wso2am-tm`
     - `wso2am-universal-gw`
@@ -42,27 +42,19 @@ When you run the startup script, it initializes a MySQL Docker container and exe
     http://localhost:9000
     ```
 
-5. Stop the services
+5. Stop the services:
     ```bash
     sh run.sh --stop
     ```
 
 ### Environment Configuration
 
-Environment variables can be configured in the `.env` file:
-
-```
-# API Gateway configuration
-APIM_GATEWAY_PORT=8080
-
-# Portal configuration
-APIM_PORTAL_PORT=9000
-
-# Database configuration
-APIM_DB_USER=apim
-APIM_DB_PASSWORD=password
-```
+If you need to update any configuration files in the `conf/repository` directory in any packs, make the changes in the `conf/repository` directory. These updates will be copied to the required location automatically when you execute the `run.sh` script.
 
 ### Troubleshooting
 
-You can find each APIM component logs in `logs/` directory. 
+- Logs for each APIM component can be found in the `logs/` directory. 
+- If necessary, terminate all WSO2 Java services using the following command:
+    ```bash
+    ps -ef | grep 'wso2' | grep -v grep | awk '{print $2}' | xargs -r kill -9
+    ```
