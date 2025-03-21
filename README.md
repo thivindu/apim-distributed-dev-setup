@@ -45,7 +45,7 @@ When you execute the startup script, it initializes a MySQL Docker container and
 5. You can now access the portals at the following URLs:
     ```
     Control Plane: https://cp.wso2.com:9443
-    Gateway: https://gw.wso2.com
+    Gateway: https://gw.wso2.com:8245
     ```
 
 5. Stop the services:
