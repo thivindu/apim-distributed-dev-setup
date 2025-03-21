@@ -26,8 +26,40 @@ wait_for_service_start() {
     fi
 }
 
+stop_services() {
+    echo "Stopping apim-acp"
+    sh ./components/wso2am-acp/bin/api-cp.sh --stop
+    echo "Stopping apim-tm"
+    sh ./components/wso2am-tm/bin/traffic-manager.sh --stop
+    echo "Stopping apim-universal-gw"
+    sh ./components/wso2am-universal-gw/bin/gateway.sh --stop
+
+    # Stop docker containers
+    docker-compose down
+}
+
 mkdir -p logs
 rm -rf logs/*
+
+# Process input arguments
+for c in $*
+do
+    if [ "$c" = "--stop" ] || [ "$c" = "-stop" ] || [ "$c" = "stop" ]; then
+        CMD="stop"
+    elif [ "$c" = "--start" ] || [ "$c" = "-start" ] || [ "$c" = "start" ]; then
+          CMD="start"
+    elif [ "$c" = "--version" ] || [ "$c" = "-version" ] || [ "$c" = "version" ]; then
+          CMD="version"
+    elif [ "$c" = "--restart" ] || [ "$c" = "-restart" ] || [ "$c" = "restart" ]; then
+          CMD="restart"
+    fi
+done
+
+# Stop services
+if [ "$CMD" = "stop" ]; then
+    stop_services
+    exit 0
+fi
 
 # Copy deployment.toml files
 echo "Copying deployment.toml files"
@@ -40,6 +72,18 @@ echo "Copying mysql-connector-j-8.4.0.jar"
 cp -v ./lib/mysql-connector-j-8.4.0.jar ./components/wso2am-acp/repository/components/lib/
 cp -v ./lib/mysql-connector-j-8.4.0.jar ./components/wso2am-tm/repository/components/lib/
 cp -v ./lib/mysql-connector-j-8.4.0.jar ./components/wso2am-universal-gw/repository/components/lib/
+
+# Start docker containers
+echo "Starting docker containers"
+docker-compose up -d
+
+# Wait for mysql to start
+echo "Waiting for mysql to start..."
+docker-compose exec mysql mysqladmin --silent --wait=30 -uroot -proot ping
+if [ $? -ne 0 ]; then
+    echo "Error: mysql did not start within the expected time"
+    exit $?
+fi
 
 # Start apim-acp
 echo "Starting apim-acp"
