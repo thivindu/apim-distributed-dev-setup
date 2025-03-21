@@ -8,11 +8,10 @@
     "vscode": {
       "extensions": [
         "redhat.java",
-        "vscjava.vscode-java-pack",
-        "ms-mysql.mysql"
+        "vscjava.vscode-java-pack"
       ]
     }
   },
   // "postCreateCommand": "sudo apt update && sudo apt install -y maven",
-  "remoteUser": "vscode"
+  "remoteUser": "root"
 }
