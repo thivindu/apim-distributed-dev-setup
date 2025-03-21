@@ -37,9 +37,15 @@ When you execute the startup script, it initializes a MySQL Docker container and
     sh run.sh
     ```
 
-4. Access the API Management portal at:
+4. Add the following entry to the `/etc/hosts` file:
     ```
-    http://localhost:9000
+    127.0.0.1    tm.wso2.com gw.wso2.com cp.wso2.com am.wso2.com
+    ```
+
+5. You can now access the portals at the following URLs:
+    ```
+    Control Plane: https://cp.wso2.com:9443
+    Gateway: https://gw.wso2.com
     ```
 
 5. Stop the services:
