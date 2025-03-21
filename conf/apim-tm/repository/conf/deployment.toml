@@ -1,6 +1,7 @@
 [server]
-hostname = "localhost"
-server_role = "default"
+hostname = "tm.wso2.com"
+node_ip = "127.0.0.1"
+server_role = "traffic-manager"
 
 [user_store]
 type = "database_unique_id"
@@ -12,14 +13,14 @@ create_admin_account = true
 
 [database.apim_db]
 type = "mysql"
-url = "jdbc:mysql://mysql:3306/WSO2AM_DB?autoReconnect=true&amp;allowPublicKeyRetrieval=true&amp;useSSL=false"
+url = "jdbc:mysql://127.0.0.1:3316/WSO2AM_DB?autoReconnect=true&amp;allowPublicKeyRetrieval=true&amp;useSSL=false"
 username = "wso2carbon"
 password = "wso2carbon"
 driver = "com.mysql.cj.jdbc.Driver"
 
 [database.shared_db]
 type = "mysql"
-url = "jdbc:mysql://mysql:3306/WSO2AM_SHARED_DB?autoReconnect=true&amp;allowPublicKeyRetrieval=true&amp;useSSL=false"
+url = "jdbc:mysql://127.0.0.1:3316/WSO2AM_SHARED_DB?autoReconnect=true&amp;allowPublicKeyRetrieval=true&amp;useSSL=false"
 username = "wso2carbon"
 password = "wso2carbon"
 driver = "com.mysql.cj.jdbc.Driver"
@@ -37,9 +38,9 @@ type = "JKS"
 password = "wso2carbon"
 
 # Event Hub configurations
-#[apim.event_hub]
-#enable = true
-#username = "$ref{super_admin.username}"
-#password = "$ref{super_admin.password}"
-#service_url = "https://localhost:9443/services/"
-#event_listening_endpoints = ["tcp://localhost:5672"]
+[apim.event_hub]
+enable = true
+username = "$ref{super_admin.username}"
+password = "$ref{super_admin.password}"
+service_url = "https://cp.wso2.com:9443/services/"
+event_listening_endpoints = ["tcp://cp.wso2.com:5672"]

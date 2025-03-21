@@ -1,14 +1,5 @@
 version: "3.8"
 services:
-  apim:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - ..:/workspace
-    depends_on:
-      - mysql
-
   mysql:
     image: mysql:8
     ports:
@@ -18,8 +9,8 @@ services:
       MYSQL_USER: wso2carbon
       MYSQL_PASSWORD: wso2carbon
     volumes:
-      - ../conf/mysql/scripts:/docker-entrypoint-initdb.d
-      - ../conf/mysql/conf/my.cnf:/etc/mysql/mysql.conf.d/my.cnf
+      - ./conf/mysql/scripts:/docker-entrypoint-initdb.d
+      - ./conf/mysql/conf/my.cnf:/etc/mysql/mysql.conf.d/my.cnf
       - mysql-apim-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "sh", "-c", "mysqladmin ping -uroot -proot && [ -f /var/lib/mysql/initialization-complete.flag ]"]
