@@ -1,5 +1,20 @@
 #!/bin/bash
 
+MYSQL_USER=wso2carbon
+MYSQL_PASSWORD=wso2carbon
+WSO2AM_SHARED_DB=WSO2AM_SHARED_DB
+WSO2AM_DB=WSO2AM_DB
+
+print_title() {
+  local title="$1"
+  echo
+  tput bold
+  tput setaf 2  # Green text
+  echo "=== $title ==="
+  tput sgr0     # Reset formatting
+  echo
+}
+
 # Function to wait for a service to start
 wait_for_service_start() {
     local service_name=$1
@@ -27,19 +42,16 @@ wait_for_service_start() {
 }
 
 stop_services() {
-    echo "Stopping apim-acp"
+    print_title "Stopping apim-acp"
     sh ./components/wso2am-acp/bin/api-cp.sh --stop
-    echo "Stopping apim-tm"
+    print_title "Stopping apim-tm"
     sh ./components/wso2am-tm/bin/traffic-manager.sh --stop
-    echo "Stopping apim-universal-gw"
+    print_title "Stopping apim-universal-gw"
     sh ./components/wso2am-universal-gw/bin/gateway.sh --stop
 
     # Stop docker containers
     docker-compose down
 }
-
-mkdir -p logs
-rm -rf logs/*
 
 # Process input arguments
 for c in $*
@@ -48,8 +60,8 @@ do
         CMD="stop"
     elif [ "$c" = "--start" ] || [ "$c" = "-start" ] || [ "$c" = "start" ]; then
           CMD="start"
-    elif [ "$c" = "--version" ] || [ "$c" = "-version" ] || [ "$c" = "version" ]; then
-          CMD="version"
+    elif [ "$c" = "--seed" ] || [ "$c" = "-seed" ]; then
+          SEED="seed"
     elif [ "$c" = "--restart" ] || [ "$c" = "-restart" ] || [ "$c" = "restart" ]; then
           CMD="restart"
     fi
@@ -61,20 +73,23 @@ if [ "$CMD" = "stop" ]; then
     exit 0
 fi
 
+mkdir -p logs
+rm -rf logs/*
+
 # Copy deployment.toml files
-echo "Copying deployment.toml files"
+print_title "Copying deployment.toml files"
 cp -v -r ./conf/apim-acp/repository/* ./components/wso2am-acp/repository/
 cp -v -r ./conf/apim-tm/repository/* ./components/wso2am-tm/repository/
 cp -v -r ./conf/apim-universal-gw/repository/* ./components/wso2am-universal-gw/repository/
 
 # Copy mysql-connector-j-8.4.0.jar
-echo "Copying mysql-connector-j-8.4.0.jar"
+print_title "Copying mysql-connector-j-8.4.0.jar"
 cp -v ./lib/mysql-connector-j-8.4.0.jar ./components/wso2am-acp/repository/components/lib/
 cp -v ./lib/mysql-connector-j-8.4.0.jar ./components/wso2am-tm/repository/components/lib/
 cp -v ./lib/mysql-connector-j-8.4.0.jar ./components/wso2am-universal-gw/repository/components/lib/
 
 # Start docker containers
-echo "Starting docker containers"
+print_title "Starting docker containers"
 docker-compose up -d
 
 # Wait for mysql to start
@@ -85,8 +100,20 @@ if [ $? -ne 0 ]; then
     exit $?
 fi
 
+# Seed database if seed flag is set
+if [ "$SEED" = "seed" ] && [ "$CMD" != "stop" ]; then
+    print_title "Seeding database"
+    docker-compose exec mysql mysql -u$MYSQL_USER -p$MYSQL_PASSWORD -e "USE $WSO2AM_SHARED_DB; source /home/dbScripts/mysql.sql"
+    docker-compose exec mysql mysql -u$MYSQL_USER -p$MYSQL_PASSWORD -e "USE $WSO2AM_DB; source /home/dbScripts/apimgt/mysql.sql"
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error seeding database. Exiting."
+    exit $?
+fi
+
 # Start apim-acp
-echo "Starting apim-acp"
+print_title "Starting apim-acp"
 sh ./components/wso2am-acp/bin/api-cp.sh > logs/apim-acp.log 2>&1 &
 if [ $? -ne 0 ]; then
     echo "Error starting apim-acp. Exiting."
@@ -96,7 +123,7 @@ fi
 wait_for_service_start "apim-acp" 0
 
 # Start apim-tm
-echo "Starting apim-tm"
+print_title "Starting apim-tm"
 sh ./components/wso2am-tm/bin/traffic-manager.sh -DportOffset=1 > logs/apim-tm.log 2>&1 &
 if [ $? -ne 0 ]; then
     echo "Error starting apim-tm. Exiting."
@@ -106,7 +133,7 @@ fi
 wait_for_service_start "apim-tm" 1
 
 # Start apim-universal-gw
-echo "Starting apim-universal-gw"
+print_title "Starting apim-universal-gw"
 sh ./components/wso2am-universal-gw/bin/gateway.sh -DportOffset=2 > logs/apim-universal-gw.log 2>&1 &
 if [ $? -ne 0 ]; then
     echo "Error starting apim-universal-gw. Exiting."
