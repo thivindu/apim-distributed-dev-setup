@@ -1,6 +1,5 @@
 [server]
-hostname = "cp.wso2.com"
-node_ip = "127.0.0.1"
+hostname = "localhost"
 #offset=0
 base_path = "${carbon.protocol}://${carbon.host}:${carbon.management.port}"
 #discard_empty_caches = false
@@ -176,9 +175,9 @@ password = "${admin.password}"
 enable = true
 username = "$ref{super_admin.username}"
 password = "$ref{super_admin.password}"
-service_url = "https://cp.wso2.com:9443/services/"
-event_listening_endpoints = ["tcp://cp.wso2.com:5672"]
+service_url = "https://localhost:9443/services/"
+event_listening_endpoints = ["tcp://localhost:5672"]
 
 [[apim.event_hub.publish.url_group]]
-urls = ["tcp://cp.wso2.com:9611"]
-auth_urls = ["ssl://cp.wso2.com:9711"]
+urls = ["tcp://localhost:9611"]
+auth_urls = ["ssl://localhost:9711"]
