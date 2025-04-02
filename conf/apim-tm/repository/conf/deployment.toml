@@ -1,6 +1,6 @@
 [server]
 hostname = "localhost"
-server_role = "traffic-manager"
+server_role = "default"
 
 [user_store]
 type = "database_unique_id"
