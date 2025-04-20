@@ -100,16 +100,15 @@ if [ $? -ne 0 ]; then
     exit $?
 fi
 
+sleep 10
+
 # Seed database if seed flag is set
 if [ "$SEED" = "seed" ] && [ "$CMD" != "stop" ]; then
     print_title "Seeding database"
     docker-compose exec mysql mysql -u$MYSQL_USER -p$MYSQL_PASSWORD -e "USE $WSO2AM_SHARED_DB; source /home/dbScripts/mysql.sql"
+    sleep 10
     docker-compose exec mysql mysql -u$MYSQL_USER -p$MYSQL_PASSWORD -e "USE $WSO2AM_DB; source /home/dbScripts/apimgt/mysql.sql"
-fi
-
-if [ $? -ne 0 ]; then
-    echo "Error seeding database. Exiting."
-    exit $?
+    sleep 10
 fi
 
 # Start apim-acp
