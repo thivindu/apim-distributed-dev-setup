@@ -4,7 +4,7 @@
 1. Newman – Install with `brew install newman`
 
 This profile is used to verify basic functionality. Here, we execute a Postman collection using Newman.
-**Note:** From APIM v4.5.0 onwards, Pizzashack is not available by default. Therefore, you need to add it manually. In this setup, Pizzashack has been added to the ACP.
+**Note:** From APIM v4.5.0 onwards, Pizzashack is not available by default. Therefore, you need to add it manually. In this setup, Pizzashack need to be added to the ACP.
 
 ## How to Run the Profile Tests
 1. Start the APIM distributed setup. Please refer to [README.md](../README.md).
