@@ -1,6 +1,6 @@
 [server]
 hostname = "localhost"
-server_role = "default"
+server_role = "gateway-worker"
 
 [user_store]
 type = "database_unique_id"

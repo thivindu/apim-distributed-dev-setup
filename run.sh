@@ -1,5 +1,10 @@
 #!/bin/bash
 
+COMPONENTS_DIR="./components"
+ZIP_FILE="$COMPONENTS_DIR/wso2am-4.0.0.zip"
+EXTRACT_DIR="$COMPONENTS_DIR/wso2am"
+COPIES=("wso2am-cp" "wso2am-tm" "wso2am-gw")
+
 MYSQL_USER=wso2carbon
 MYSQL_PASSWORD=wso2carbon
 WSO2AM_SHARED_DB=WSO2AM_SHARED_DB
@@ -42,15 +47,20 @@ wait_for_service_start() {
 }
 
 stop_services() {
-    print_title "Stopping apim-acp"
-    sh ./components/wso2am-acp/bin/api-cp.sh --stop
+    print_title "Stopping apim-cp"
+    sh ./components/wso2am-cp/bin/api-manager.sh --stop
     print_title "Stopping apim-tm"
-    sh ./components/wso2am-tm/bin/traffic-manager.sh --stop
-    print_title "Stopping apim-universal-gw"
-    sh ./components/wso2am-universal-gw/bin/gateway.sh --stop
+    sh ./components/wso2am-tm/bin/api-manager.sh --stop
+    print_title "Stopping apim-gw"
+    sh ./components/wso2am-gw/bin/api-manager.sh --stop
 
     # Stop docker containers
     docker-compose down
+
+    # Deleting only the copied directories, preserving the original
+    for copy in "${COPIES[@]}"; do
+        rm -rf "$COMPONENTS_DIR/$copy"
+    done
 }
 
 clean_services() {
@@ -100,17 +110,24 @@ fi
 mkdir -p logs
 rm -rf logs/*
 
-# Copy deployment.toml files
-print_title "Copying deployment.toml files"
-cp -v -r ./conf/apim-acp/repository/* ./components/wso2am-acp/repository/
-cp -v -r ./conf/apim-tm/repository/* ./components/wso2am-tm/repository/
-cp -v -r ./conf/apim-universal-gw/repository/* ./components/wso2am-universal-gw/repository/
+# Create copies of packs for each component
+print_title "Creating copies of packs for each component"
+for copy in "${COPIES[@]}"; do
+  echo "Creating copy: $COMPONENTS_DIR/$copy..."
+  cp -r "$EXTRACT_DIR" "$COMPONENTS_DIR/$copy"
+done
+
+# Profile the packs for each component
+print_title "Profiling the packs for each component"
+sh ./components/wso2am-cp/bin/profileSetup.sh -Dprofile=control-plane > logs/apim-cp.log 2>&1 &
+sh ./components/wso2am-tm/bin/profileSetup.sh -Dprofile=traffic-manager > logs/apim-tm.log 2>&1 &
+sh ./components/wso2am-gw/bin/profileSetup.sh -Dprofile=gateway-worker > logs/apim-gw.log 2>&1 &
 
 # Copy mysql-connector-j-8.4.0.jar
 print_title "Copying mysql-connector-j-8.4.0.jar"
-cp -v ./lib/mysql-connector-j-8.4.0.jar ./components/wso2am-acp/repository/components/lib/
+cp -v ./lib/mysql-connector-j-8.4.0.jar ./components/wso2am-cp/repository/components/lib/
 cp -v ./lib/mysql-connector-j-8.4.0.jar ./components/wso2am-tm/repository/components/lib/
-cp -v ./lib/mysql-connector-j-8.4.0.jar ./components/wso2am-universal-gw/repository/components/lib/
+cp -v ./lib/mysql-connector-j-8.4.0.jar ./components/wso2am-gw/repository/components/lib/
 
 # Start docker containers
 print_title "Starting docker containers"
@@ -118,7 +135,7 @@ docker-compose up -d
 
 # Wait for mysql to start
 echo "Waiting for mysql to start..."
-docker-compose exec mysql mysqladmin --silent --wait=60 -uroot -proot ping
+docker-compose exec mysql mysqladmin --silent --wait=60 -uroot -proot -h127.0.0.1 ping
 if [ $? -ne 0 ]; then
     echo "Error: mysql did not start within the expected time"
     exit $?
@@ -129,25 +146,36 @@ sleep 10
 # Seed database if seed flag is set
 if [ "$SEED" = "seed" ] && [ "$CMD" != "stop" ]; then
     print_title "Seeding database"
-    docker-compose exec mysql mysql -u$MYSQL_USER -p$MYSQL_PASSWORD -e "USE $WSO2AM_SHARED_DB; source /home/dbScripts/mysql.sql"
+    docker-compose exec mysql mysql -u$MYSQL_USER -p$MYSQL_PASSWORD -h127.0.0.1 -e "USE $WSO2AM_SHARED_DB; source /home/dbscripts/mysql.sql"
     sleep 10
-    docker-compose exec mysql mysql -u$MYSQL_USER -p$MYSQL_PASSWORD -e "USE $WSO2AM_DB; source /home/dbScripts/apimgt/mysql.sql"
+    docker-compose exec mysql mysql -u$MYSQL_USER -p$MYSQL_PASSWORD -h127.0.0.1 -e "USE $WSO2AM_DB; source /home/dbscripts/apimgt/mysql.sql"
     sleep 10
 fi
 
-# Start apim-acp
-print_title "Starting apim-acp"
-sh ./components/wso2am-acp/bin/api-cp.sh > logs/apim-acp.log 2>&1 &
 if [ $? -ne 0 ]; then
-    echo "Error starting apim-acp. Exiting."
+    echo "Error seeding database. Exiting."
     exit $?
 fi
-# Wait until apim-acp is fully started and responding
-wait_for_service_start "apim-acp" 0
+
+# Copy deployment.toml files
+print_title "Copying deployment.toml files"
+cp -f ./conf/apim-cp/repository/conf/deployment.toml ./components/wso2am-cp/repository/conf/deployment.toml
+cp -f ./conf/apim-tm/repository/conf/deployment.toml ./components/wso2am-tm/repository/conf/deployment.toml
+cp -f ./conf/apim-gw/repository/conf/deployment.toml ./components/wso2am-gw/repository/conf/deployment.toml
+
+# Start apim-cp
+print_title "Starting apim-cp"
+sh ./components/wso2am-cp/bin/api-manager.sh -Dprofile=control-plane > logs/apim-cp.log 2>&1 &
+if [ $? -ne 0 ]; then
+    echo "Error starting apim-cp. Exiting."
+    exit $?
+fi
+# Wait until apim-cp is fully started and responding
+wait_for_service_start "apim-cp" 0
 
 # Start apim-tm
 print_title "Starting apim-tm"
-sh ./components/wso2am-tm/bin/traffic-manager.sh -DportOffset=1 > logs/apim-tm.log 2>&1 &
+sh ./components/wso2am-tm/bin/api-manager.sh -Dprofile=traffic-manager -DportOffset=1 > logs/apim-tm.log 2>&1 &
 if [ $? -ne 0 ]; then
     echo "Error starting apim-tm. Exiting."
     exit $?
@@ -155,12 +183,12 @@ fi
 # Wait until apim-tm is fully started and responding
 wait_for_service_start "apim-tm" 1
 
-# Start apim-universal-gw
-print_title "Starting apim-universal-gw"
-sh ./components/wso2am-universal-gw/bin/gateway.sh -DportOffset=2 > logs/apim-universal-gw.log 2>&1 &
+# Start apim-gw
+print_title "Starting apim-gw"
+sh ./components/wso2am-gw/bin/api-manager.sh -Dprofile=gateway-worker -DportOffset=2 > logs/apim-gw.log 2>&1 &
 if [ $? -ne 0 ]; then
-    echo "Error starting apim-universal-gw. Exiting."
+    echo "Error starting apim-gw. Exiting."
     exit $?
 fi
-# Wait until apim-universal-gw is fully started and responding
-wait_for_service_start "apim-universal-gw" 2
+# Wait until apim-gw is fully started and responding
+wait_for_service_start "apim-gw" 2

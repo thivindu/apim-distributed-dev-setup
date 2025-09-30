@@ -6,12 +6,13 @@ services:
       - "3316:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: '%'
       MYSQL_USER: wso2carbon
       MYSQL_PASSWORD: wso2carbon
     volumes:
       - ./conf/mysql/scripts:/docker-entrypoint-initdb.d
       - ./conf/mysql/conf/my.cnf:/etc/mysql/mysql.conf.d/my.cnf
-      - ./components/wso2am-acp/dbscripts:/home/dbScripts
+      - ./components/wso2am-cp/dbscripts:/home/dbscripts
       - mysql-apim-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "sh", "-c", "mysqladmin ping -uroot -proot && [ -f /var/lib/mysql/initialization-complete.flag ]"]
