@@ -62,8 +62,8 @@ show_as_token_endpoint_url = true
 service_url = "https://localhost:9445/services/"
 username= "${admin.username}"
 password= "${admin.password}"
-ws_endpoint = "ws://localhost:9099"
-wss_endpoint = "wss://localhost:8099"
+ws_endpoint = "ws://localhost:9101"
+wss_endpoint = "wss://localhost:8101"
 http_endpoint = "http://localhost:8282"
 https_endpoint = "https://localhost:8245"
 
